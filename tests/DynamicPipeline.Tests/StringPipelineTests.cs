@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-
+using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using Ninject;
@@ -34,7 +34,7 @@ namespace DynamicPipeline.Tests
 		}
 
 		[Test]
-		public void BothSuccessExecutionTest()
+		public async Task BothSuccessExecutionTest()
 		{
 			// arrange
 			var configuration = new Dictionary<string, IHandlerBehavior>
@@ -49,14 +49,14 @@ namespace DynamicPipeline.Tests
 			_pipeline.Configure(configuration);
 
 			// act
-			var result = _pipeline.Execute(new HandleContext<string>("Foo and Bar"));
+			var result = await _pipeline.Execute(new HandleContext<string>("Foo and Bar")).ConfigureAwait(false);
 
 			// assert
 			result.Success.Should().BeTrue();
 		}
 
 		[Test]
-		public void OnlyFooExecutionTest()
+		public async Task OnlyFooExecutionTest()
 		{
 			// arrange
 			var configuration = new Dictionary<string, IHandlerBehavior>
@@ -71,7 +71,7 @@ namespace DynamicPipeline.Tests
 			_pipeline.Configure(configuration);
 
 			// act
-			var result = _pipeline.Execute(new HandleContext<string>("Only Foo"));
+			var result = await _pipeline.Execute(new HandleContext<string>("Only Foo")).ConfigureAwait(false);
 
 			// assert
 			result.Success.Should().BeFalse();
@@ -79,7 +79,7 @@ namespace DynamicPipeline.Tests
 		}
 
 		[Test]
-		public void BarHandleFooErrorsTest()
+		public async Task BarHandleFooErrorsTest()
 		{
 			// arrange
 			var configuration = new Dictionary<string, IHandlerBehavior>
@@ -96,7 +96,7 @@ namespace DynamicPipeline.Tests
 			var barMock = new Mock<BarHandler>();
 			var context = new HandleContext<string>("It will fail");
 
-			barMock.Setup(b => b.Handle(context)).Returns(new HandleResult());
+			barMock.Setup(b => b.Handle(context)).ReturnsAsync(new HandleResult());
 
 			_kernel.Bind<IHandler<string>>().To<FooHandler>().Named("Foo");
 			_kernel.Bind<IHandler<string>>().ToMethod(ctx => barMock.Object).Named("Bar");
@@ -104,7 +104,7 @@ namespace DynamicPipeline.Tests
 			_pipeline.Configure(configuration);
 
 			// act
-			var result = _pipeline.Execute(context);
+			var result = await _pipeline.Execute(context).ConfigureAwait(false);
 
 			// assert
 			result.Success.Should().BeFalse();

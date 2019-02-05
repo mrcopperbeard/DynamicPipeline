@@ -1,4 +1,6 @@
-﻿namespace DynamicPipeline
+﻿using System.Threading.Tasks;
+
+namespace DynamicPipeline
 {
 	internal class BehavedHandlerDecorator<T> : IHandler<T>
 	{
@@ -14,24 +16,24 @@
 			_behavior = behavior;
 		}
 
-		public IHandleResult Handle(IHandleContext<T> context)
+		public async Task<IHandleResult> Handle(IHandleContext<T> context)
 		{
 			if (context.Result.Success || _behavior.Mode == HandleMode.Anyway)
 			{
-				return _handler.Handle(context);
+				return await _handler.Handle(context).ConfigureAwait(false);
 			}
 
 			if (_behavior.Mode == HandleMode.OnError)
 			{
-				HandleError(context);
+				await HandleError(context).ConfigureAwait(false);
 			}
 
 			return new HandleResult();
 		}
 
-		public void HandleError(IHandleContext<T> context)
+		public Task HandleError(IHandleContext<T> context)
 		{
-			_handler.HandleError(context);
+			return _handler.HandleError(context);
 		}
 	}
 }

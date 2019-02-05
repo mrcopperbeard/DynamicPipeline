@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace DynamicPipeline.Tests
 {
 	public class FooHandler : IHandler<string>
 	{
-		public IHandleResult Handle(IHandleContext<string> context)
+		public Task<IHandleResult> Handle(IHandleContext<string> context)
 		{
 			var result = new HandleResult();
 			var value = context.Value;
@@ -18,12 +19,14 @@ namespace DynamicPipeline.Tests
 				result.Errors.Add($"Failed in Foo: {value}");
 			}
 
-			return result;
+			return Task.FromResult((IHandleResult)result);
 		}
 
-		public void HandleError(IHandleContext<string> context)
+		public Task HandleError(IHandleContext<string> context)
 		{
 			Console.Out.WriteLine($"Foo handling errors: {string.Join(Environment.NewLine, context.Result.Errors)}");
+
+			return Task.CompletedTask;
 		}
 	}
 }

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+
 using Ninject;
 using Ninject.Syntax;
 
@@ -10,7 +12,7 @@ namespace DynamicPipeline
 	{
 		void Configure(IDictionary<string, IHandlerBehavior> configuration);
 
-		IHandleResult Execute(IHandleContext<T> context);
+		Task<IHandleResult> Execute(IHandleContext<T> context);
 	}
 
 	public class Pipeline<T> : IPipeline<T>
@@ -37,7 +39,7 @@ namespace DynamicPipeline
 			}
 		}
 
-		public IHandleResult Execute(IHandleContext<T> context)
+		public async Task<IHandleResult> Execute(IHandleContext<T> context)
 		{
 			if (!_pipeline.Any())
 			{
@@ -46,7 +48,7 @@ namespace DynamicPipeline
 
 			foreach (var handler in _pipeline)
 			{
-				var handleResult = handler.Handle(context);
+				var handleResult = await handler.Handle(context).ConfigureAwait(false);
 
 				foreach (var error in handleResult.Errors)
 				{
